@@ -1,0 +1,41 @@
+{
+  "0001234-56.2024.8.24.0001": [
+    {
+      "codigo": "SENTENCA",
+      "titulo": "Sentença proferida",
+      "descricao": "Sentença de procedência do pedido, julgando procedente a ação.",
+      "data_evento": "2025-01-05T14:30:00Z",
+      "origem": "datajud"
+    },
+    {
+      "codigo": "CONCLUSO",
+      "titulo": "Concluso para sentença",
+      "descricao": "Processo concluso ao magistrado para prolação de sentença.",
+      "data_evento": "2024-12-20T10:15:00Z",
+      "origem": "datajud"
+    },
+    {
+      "codigo": "AUDIENCIA",
+      "titulo": "Realizada audiência de instrução",
+      "descricao": "Realizada audiência de instrução e julgamento com oitiva de testemunhas.",
+      "data_evento": "2024-12-10T14:00:00Z",
+      "origem": "datajud"
+    }
+  ],
+  "0007890-12.2024.8.24.0023": [
+    {
+      "codigo": "JUNTADA",
+      "titulo": "Juntada de petição",
+      "descricao": "Juntada de petição de contestação apresentada pelo réu.",
+      "data_evento": "2025-10-30T09:45:00Z",
+      "origem": "datajud"
+    },
+    {
+      "codigo": "CITACAO",
+      "titulo": "Expedição de mandado de citação",
+      "descricao": "Expedido mandado de citação do réu.",
+      "data_evento": "2025-10-15T11:00:00Z",
+      "origem": "datajud"
+    }
+  ]
+}

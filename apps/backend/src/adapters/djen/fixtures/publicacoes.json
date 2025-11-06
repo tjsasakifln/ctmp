@@ -1,0 +1,36 @@
+{
+  "TJSC": [
+    {
+      "codigo": "DJEN-20251105-001",
+      "titulo": "Publicação de sentença",
+      "descricao": "Publicada sentença de procedência nos autos do processo 0001234-56.2024.8.24.0001.",
+      "data_evento": "2025-01-05T08:00:00Z",
+      "origem": "djen"
+    },
+    {
+      "codigo": "DJEN-20251030-045",
+      "titulo": "Intimação para manifestação",
+      "descricao": "Intima-se a parte autora para manifestação no prazo de 15 dias.",
+      "data_evento": "2025-10-30T08:00:00Z",
+      "origem": "djen"
+    }
+  ],
+  "TJSP": [
+    {
+      "codigo": "DJEN-20251104-123",
+      "titulo": "Publicação de acórdão",
+      "descricao": "Acórdão publicado determinando provimento parcial do recurso.",
+      "data_evento": "2025-01-04T08:00:00Z",
+      "origem": "djen"
+    }
+  ],
+  "DEFAULT": [
+    {
+      "codigo": "DJEN-GENERIC",
+      "titulo": "Publicação no Diário Eletrônico",
+      "descricao": "Publicação genérica no Diário de Justiça Eletrônico.",
+      "data_evento": "2025-10-28T08:00:00Z",
+      "origem": "djen"
+    }
+  ]
+}
