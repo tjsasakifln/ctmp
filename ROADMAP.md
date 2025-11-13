@@ -75,6 +75,8 @@ MVP Atual → Produção MVP → Integrações Reais → Multi-tenant → Enterp
 - [ ] Validar certificado HTTPS
 
 #### 1.3 CI/CD Pipeline
+
+**Workflows Criados:**
 - [x] Criar workflow GitHub Actions `.github/workflows/ci.yml`:
   - [x] Job: `lint` (ESLint)
   - [x] Job: `test` (Vitest)
@@ -89,9 +91,23 @@ MVP Atual → Produção MVP → Integrações Reais → Multi-tenant → Enterp
   - [x] Deploy manual para production (approval required)
   - [x] Pre-deployment checks
   - [x] Post-deployment validation
-- [ ] Configurar Railway GitHub integration
 
-**✅ Status:** Workflows criados e prontos para uso. Requer configuração de secrets no GitHub.
+**Correções Necessárias:**
+- [ ] Migrar `.eslintrc.json` para `eslint.config.js` (ESLint v9 compatibility) - **BLOCKER**
+- [ ] Validar que `npm run lint` funciona localmente
+- [ ] Validar que `npm test` funciona localmente
+- [ ] Validar que `npm run build` funciona localmente
+- [ ] Testar CI workflow em PR de teste
+
+**Configuração Pendente:**
+- [ ] Configurar GitHub Environments (staging, production)
+- [ ] Configurar GitHub Secrets (Railway tokens, URLs)
+- [ ] Configurar Railway GitHub integration
+- [ ] Criar projetos Railway (staging, production)
+
+**⚠️ Status Real:** Workflows criados mas **NÃO VALIDADOS**. ESLint v9 config quebrado vai causar falha no CI. Requer issues #[TBD] para tornar executável.
+
+**Estimativa para completar:** 4-6h (correção ESLint + validação + configuração)
 
 ### Semana 2: Observabilidade
 
