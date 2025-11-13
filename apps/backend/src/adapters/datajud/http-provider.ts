@@ -42,18 +42,27 @@ export class HttpDataJudProvider implements DataJudProvider {
     }
   }
 
-  private normalizeResponse(data: any): DataJudMovement[] {
+  private normalizeResponse(data: unknown): DataJudMovement[] {
     // TODO: Adaptar conforme estrutura real da API DataJud
-    if (!Array.isArray(data.movimentacoes)) {
+    if (
+      !data ||
+      typeof data !== 'object' ||
+      !('movimentacoes' in data) ||
+      !Array.isArray(data.movimentacoes)
+    ) {
       return [];
     }
 
-    return data.movimentacoes.map((mov: any) => ({
-      codigo: mov.codigo || mov.codigoMovimento,
-      titulo: mov.titulo || mov.descricao,
-      descricao: mov.complemento || mov.observacao || '',
-      data_evento: mov.dataHora || mov.dataMovimento,
-      origem: 'datajud' as const,
-    }));
+    return data.movimentacoes.map((mov: unknown) => {
+      // Type guard for API response structure
+      const movObj = mov as Record<string, unknown>;
+      return {
+        codigo: String(movObj.codigo || movObj.codigoMovimento || ''),
+        titulo: String(movObj.titulo || movObj.descricao || ''),
+        descricao: String(movObj.complemento || movObj.observacao || ''),
+        data_evento: String(movObj.dataHora || movObj.dataMovimento || ''),
+        origem: 'datajud' as const,
+      };
+    });
   }
 }

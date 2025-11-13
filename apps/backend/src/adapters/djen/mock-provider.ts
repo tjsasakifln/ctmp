@@ -27,7 +27,7 @@ export class MockDJENProvider implements DJENProvider {
 
       // Se NUP especificado, filtra
       if (params.nup && Array.isArray(publicacoes)) {
-        return publicacoes.filter((p: any) =>
+        return publicacoes.filter((p: DJENPublicacao) =>
           p.descricao?.includes(params.nup) || p.titulo?.includes(params.nup)
         );
       }

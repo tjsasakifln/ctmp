@@ -5,6 +5,7 @@ import { findCasesByClientId, getLatestEventForCase } from '../cases/repository.
 import { consultaDataJud } from '../tools/consulta-datajud.js';
 import { consultaDJEN } from '../tools/consulta-djen.js';
 import { formatLegalEventForUser } from '../../core/legal-translator.js';
+import type { Case } from '../../types/index.js';
 
 interface WhatsAppMessagePayload {
   message: {
@@ -89,7 +90,7 @@ export async function handleWhatsAppMessage(payload: WhatsAppMessagePayload): Pr
 
 async function handleClienteComNUP(
   to: string,
-  activeCase: any,
+  activeCase: Case,
   log: typeof logger
 ): Promise<void> {
   // Consulta DataJud e DJEN nos últimos 7 dias

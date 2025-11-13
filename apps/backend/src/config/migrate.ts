@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+// Migration script - console output is intentional for CLI feedback
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';

@@ -47,17 +47,26 @@ export class HttpDJENProvider implements DJENProvider {
     }
   }
 
-  private normalizeResponse(data: any): DJENPublicacao[] {
-    if (!Array.isArray(data.publicacoes)) {
+  private normalizeResponse(data: unknown): DJENPublicacao[] {
+    if (
+      !data ||
+      typeof data !== 'object' ||
+      !('publicacoes' in data) ||
+      !Array.isArray(data.publicacoes)
+    ) {
       return [];
     }
 
-    return data.publicacoes.map((pub: any) => ({
-      codigo: pub.codigo || pub.id,
-      titulo: pub.titulo || pub.assunto,
-      descricao: pub.texto || pub.conteudo || '',
-      data_evento: pub.data_publicacao || pub.dataPublicacao,
-      origem: 'djen' as const,
-    }));
+    return data.publicacoes.map((pub: unknown) => {
+      // Type guard for API response structure
+      const pubObj = pub as Record<string, unknown>;
+      return {
+        codigo: String(pubObj.codigo || pubObj.id || ''),
+        titulo: String(pubObj.titulo || pubObj.assunto || ''),
+        descricao: String(pubObj.texto || pubObj.conteudo || ''),
+        data_evento: String(pubObj.data_publicacao || pubObj.dataPublicacao || ''),
+        origem: 'djen' as const,
+      };
+    });
   }
 }
