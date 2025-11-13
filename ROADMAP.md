@@ -75,17 +75,23 @@ MVP Atual → Produção MVP → Integrações Reais → Multi-tenant → Enterp
 - [ ] Validar certificado HTTPS
 
 #### 1.3 CI/CD Pipeline
-- [ ] Criar workflow GitHub Actions `.github/workflows/ci.yml`:
-  - [ ] Job: `lint` (ESLint)
-  - [ ] Job: `test` (Vitest)
-  - [ ] Job: `build` (TypeScript compilation)
-- [ ] Criar workflow deploy `.github/workflows/deploy-staging.yml`:
-  - [ ] Trigger: push to `main`
-  - [ ] Deploy automático para staging
-- [ ] Criar workflow deploy `.github/workflows/deploy-production.yml`:
-  - [ ] Trigger: tag `v*.*.*`
-  - [ ] Deploy manual para production (approval required)
+- [x] Criar workflow GitHub Actions `.github/workflows/ci.yml`:
+  - [x] Job: `lint` (ESLint)
+  - [x] Job: `test` (Vitest)
+  - [x] Job: `build` (TypeScript compilation)
+  - [x] Job: `security-audit` (npm audit)
+- [x] Criar workflow deploy `.github/workflows/deploy-staging.yml`:
+  - [x] Trigger: push to `main`
+  - [x] Deploy automático para staging
+  - [x] Smoke tests pós-deploy
+- [x] Criar workflow deploy `.github/workflows/deploy-production.yml`:
+  - [x] Trigger: tag `v*.*.*`
+  - [x] Deploy manual para production (approval required)
+  - [x] Pre-deployment checks
+  - [x] Post-deployment validation
 - [ ] Configurar Railway GitHub integration
+
+**✅ Status:** Workflows criados e prontos para uso. Requer configuração de secrets no GitHub.
 
 ### Semana 2: Observabilidade
 

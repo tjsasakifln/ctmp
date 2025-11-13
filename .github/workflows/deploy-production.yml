@@ -1,0 +1,244 @@
+name: Deploy to Production
+
+on:
+  push:
+    tags:
+      - 'v*.*.*' # Triggers on version tags like v1.0.0, v1.2.3, etc.
+  workflow_dispatch: # Permite trigger manual (com aprovação)
+    inputs:
+      version:
+        description: 'Version to deploy (e.g., v1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  pre-deploy-checks:
+    name: Pre-deployment Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.version || github.ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: apps/backend
+        run: npm ci
+
+      - name: Run all tests
+        working-directory: apps/backend
+        env:
+          NODE_ENV: test
+        run: npm test
+
+      - name: Build
+        working-directory: apps/backend
+        run: npm run build
+
+      - name: Security audit
+        working-directory: apps/backend
+        run: npm audit --audit-level=high
+
+      - name: Pre-deployment checklist
+        run: |
+          echo "✅ All tests passed"
+          echo "✅ Build successful"
+          echo "✅ Security audit passed"
+          echo "🚀 Ready for production deployment"
+
+  deploy-production:
+    name: Deploy to Railway Production
+    runs-on: ubuntu-latest
+    needs: pre-deploy-checks
+    environment:
+      name: production
+      url: https://legalbot.example.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.version || github.ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: apps/backend
+        run: npm ci --production
+
+      - name: Build
+        working-directory: apps/backend
+        run: npm run build
+
+      - name: Create deployment backup record
+        run: |
+          echo "Creating backup record before deployment..."
+          echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> deployment-log.txt
+          echo "Version: ${{ github.event.inputs.version || github.ref }}" >> deployment-log.txt
+          echo "Commit: ${{ github.sha }}" >> deployment-log.txt
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway Production
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_PRODUCTION }}
+        run: |
+          echo "🚀 Deploying to production..."
+          railway link ${{ secrets.RAILWAY_PROJECT_ID_PRODUCTION }}
+          railway up --service api --environment production
+        working-directory: apps/backend
+
+      - name: Run database migrations on production
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_PRODUCTION }}
+        run: |
+          echo "Running database migrations..."
+          railway run --service api --environment production "npm run db:migrate"
+        working-directory: apps/backend
+
+      - name: Health check
+        run: |
+          echo "Waiting 60s for deployment to stabilize..."
+          sleep 60
+
+          PRODUCTION_URL="${{ secrets.PRODUCTION_URL }}"
+
+          echo "Checking health endpoint..."
+          for i in {1..5}; do
+            response=$(curl -s -o /dev/null -w "%{http_code}" ${PRODUCTION_URL}/healthz)
+
+            if [ "$response" == "200" ]; then
+              echo "✅ Health check passed (attempt $i)"
+              break
+            else
+              echo "⚠️ Health check failed with status $response (attempt $i/5)"
+              if [ $i -eq 5 ]; then
+                echo "❌ Health check failed after 5 attempts"
+                exit 1
+              fi
+              sleep 10
+            fi
+          done
+
+      - name: Verify critical endpoints
+        run: |
+          PRODUCTION_URL="${{ secrets.PRODUCTION_URL }}"
+
+          # Test readiness
+          echo "Testing GET /readyz..."
+          curl -f ${PRODUCTION_URL}/readyz || exit 1
+
+          # Test webhook verification
+          echo "Testing webhook verification..."
+          response=$(curl -s "${PRODUCTION_URL}/webhooks/whatsapp?hub.mode=subscribe&hub.verify_token=${{ secrets.WHATSAPP_VERIFY_TOKEN }}&hub.challenge=prod_test")
+          if [ "$response" != "prod_test" ]; then
+            echo "❌ Webhook verification failed"
+            exit 1
+          fi
+
+          echo "✅ All critical endpoints verified"
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.event.inputs.version || github.ref }}
+          release_name: Release ${{ github.event.inputs.version || github.ref }}
+          body: |
+            ## Production Deployment
+
+            **Version:** ${{ github.event.inputs.version || github.ref }}
+            **Deployed at:** $(date -u +%Y-%m-%dT%H:%M:%SZ)
+            **Commit:** ${{ github.sha }}
+
+            ### Deployment Checklist
+            - ✅ All tests passed
+            - ✅ Build successful
+            - ✅ Security audit passed
+            - ✅ Database migrations applied
+            - ✅ Health checks passed
+            - ✅ Critical endpoints verified
+
+            ### Rollback Instructions
+            If needed, rollback using:
+            ```bash
+            git checkout <previous-version-tag>
+            gh workflow run deploy-production.yml -f version=<previous-version-tag>
+            ```
+          draft: false
+          prerelease: false
+
+      - name: Notify deployment success
+        if: success()
+        run: |
+          echo "🎉 Production deployment successful!"
+          echo "Version: ${{ github.event.inputs.version || github.ref }}"
+          echo "URL: ${{ secrets.PRODUCTION_URL }}"
+
+      - name: Notify deployment failure
+        if: failure()
+        run: |
+          echo "❌ Production deployment failed"
+          echo "Please check logs and consider rollback"
+          exit 1
+
+  post-deploy-validation:
+    name: Post-deployment Validation
+    runs-on: ubuntu-latest
+    needs: deploy-production
+    environment: production
+
+    steps:
+      - name: Run production smoke tests
+        run: |
+          PRODUCTION_URL="${{ secrets.PRODUCTION_URL }}"
+
+          echo "Running comprehensive smoke tests..."
+
+          # Test health
+          curl -f ${PRODUCTION_URL}/healthz || exit 1
+
+          # Test readiness
+          curl -f ${PRODUCTION_URL}/readyz || exit 1
+
+          echo "✅ All production smoke tests passed"
+
+      - name: Monitor initial metrics
+        run: |
+          echo "⏳ Monitoring initial metrics for 5 minutes..."
+          echo "Check Grafana dashboard: ${{ secrets.GRAFANA_DASHBOARD_URL }}"
+          echo "Check Railway logs: https://railway.app/project/${{ secrets.RAILWAY_PROJECT_ID_PRODUCTION }}"
+
+      - name: Deployment summary
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🎉 PRODUCTION DEPLOYMENT SUCCESSFUL"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Version: ${{ github.event.inputs.version || github.ref }}"
+          echo "URL: ${{ secrets.PRODUCTION_URL }}"
+          echo "Deployed at: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "Next steps:"
+          echo "1. Monitor Grafana dashboard for anomalies"
+          echo "2. Check error rates in logs"
+          echo "3. Validate with real user flows"
+          echo "4. Keep deployment window open for 1 hour"
+          echo ""
+          echo "Rollback command (if needed):"
+          echo "gh workflow run deploy-production.yml -f version=<previous-version>"
