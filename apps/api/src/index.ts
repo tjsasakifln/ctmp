@@ -95,12 +95,6 @@ await fastify.register(healthRoutes);
 await fastify.register(webhookRoutes, { prefix: '/webhooks' });
 await fastify.register(toolsRoutes, { prefix: '/tools' });
 
-// Inicializa workers e scheduler (apenas em produção ou se explicitamente habilitado)
-if (env.NODE_ENV === 'production' || process.env.ENABLE_WORKERS === 'true') {
-  logger.info('Inicializando workers e scheduler...');
-  await import('./jobs/index.js');
-}
-
 // Start server
 const start = async (): Promise<void> => {
   try {
