@@ -3,8 +3,10 @@ import { ExternalServiceError } from '../../utils/errors.js';
 import type { Logger } from '../../config/logger.js';
 import type { PaymentsProvider, PaymentRequest, PaymentResponse } from './index.js';
 
+import { retry } from '../../utils/retry.js';
+
 export class HttpPaymentsProvider implements PaymentsProvider {
-  constructor(private logger?: Logger) {}
+  constructor(private logger?: Logger) { }
 
   async criarCobranca(request: PaymentRequest): Promise<PaymentResponse> {
     if (!env.PAYMENTS_API_URL || !env.PAYMENTS_API_KEY) {
@@ -17,34 +19,45 @@ export class HttpPaymentsProvider implements PaymentsProvider {
 
     try {
       const url = `${env.PAYMENTS_API_URL}/charges`;
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${env.PAYMENTS_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          customer_id: request.clienteId,
-          amount: request.valor,
-          description: request.descricao,
-        }),
-      });
 
-      if (!response.ok) {
-        throw new ExternalServiceError('Payments', {
-          status: response.status,
-          statusText: response.statusText,
+      return await retry(async () => {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${env.PAYMENTS_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            customer_id: request.clienteId,
+            amount: request.valor,
+            description: request.descricao,
+          }),
         });
-      }
 
-      const data = await response.json();
+        if (!response.ok) {
+          throw new ExternalServiceError(
+            'Payments',
+            {
+              status: response.status,
+              statusText: response.statusText,
+            },
+            response.status
+          );
+        }
 
-      return {
-        paymentId: data.id || data.payment_id,
-        paymentUrl: data.payment_url || data.url,
-      };
+        const data = await response.json() as any;
+
+        return {
+          paymentId: data.id || data.payment_id,
+          paymentUrl: data.payment_url || data.url,
+        };
+      }, {
+        onRetry: (error, attempt) => {
+          this.logger?.warn({ error, attempt, request }, 'Retrying payment creation');
+        }
+      });
     } catch (error) {
-      this.logger?.error({ error, request }, 'Erro ao criar cobrança');
+      this.logger?.error({ error, request }, 'Erro ao criar cobrança após tentativas');
       throw error;
     }
   }
