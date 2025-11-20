@@ -40,8 +40,8 @@ export class RateLimitError extends AppError {
 }
 
 export class ExternalServiceError extends AppError {
-  constructor(service: string, details?: unknown) {
-    super(`External service error: ${service}`, 'EXTERNAL_SERVICE_ERROR', 502, details);
+  constructor(service: string, details?: unknown, statusCode: number = 502) {
+    super(`External service error: ${service}`, 'EXTERNAL_SERVICE_ERROR', statusCode, details);
     this.name = 'ExternalServiceError';
   }
 }
